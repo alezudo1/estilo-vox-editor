@@ -1,10 +1,10 @@
 :root {
   --marinho: #031927; --fundo: #020f18; --linha: #12334a; --lavanda: #e5d4ed; --menta: #7adfbb; --menta-clara: #a6ece0; --coral: #ff6b57; --ambar: #f4c15d;
-  font-family: Geist, system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--lavanda); background: var(--fundo);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--lavanda); background: var(--fundo);
 }
 * { box-sizing: border-box; }
 body { margin: 0; }
-code { font-family: GeistMono, ui-monospace, Consolas, monospace; font-size: 0.85em; color: var(--menta-clara); }
+code { font-family: ui-monospace, Consolas, monospace; font-size: 0.85em; color: var(--menta-clara); }
 button { font: inherit; color: inherit; cursor: pointer; }
 
 .app { display: grid; grid-template-columns: 260px 1fr; height: 100vh; }
@@ -33,11 +33,13 @@ main { overflow: hidden; }
 .zona { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .zona .proibida { fill: #ff6b5733; }
 .zona .legenda { fill: #f4c15d26; stroke: #f4c15d99; stroke-dasharray: 12 10; stroke-width: 3; }
-.zona text { fill: #f4c15dcc; font-size: 34px; font-family: Geist, sans-serif; }
+.zona text { fill: #f4c15dcc; font-size: 34px; font-family: FiraSans, sans-serif; }
+.zona .corte { stroke: #7adfbbaa; stroke-width: 3; stroke-dasharray: 6 10; }
+.zona .corte-txt { fill: #7adfbbcc; font-size: 28px; }
 .controles { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 .controles button { background: var(--linha); border: none; border-radius: 4px; width: 38px; height: 32px; }
 .controles button.play { background: var(--menta); color: var(--marinho); }
-.contador { font-family: GeistMono, ui-monospace, Consolas, monospace; font-size: 13px; margin: 0 10px; min-width: 190px; }
+.contador { font-family: ui-monospace, Consolas, monospace; font-size: 13px; margin: 0 10px; min-width: 190px; }
 .contador b { color: var(--menta); }
 .chave { font-size: 12px; opacity: 0.8; }
 .dica { font-size: 11px; opacity: 0.45; margin: 6px 0 0; max-width: 420px; text-align: center; }

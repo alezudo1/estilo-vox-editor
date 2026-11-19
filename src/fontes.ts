@@ -1,18 +1,21 @@
 import { continueRender, delayRender } from 'remotion';
-import humaneBold from './fontes/Humane-Bold.woff2';
-import geist from './fontes/Geist-VF.woff2';
-import geistSerif from './fontes/GeistSerif-VF.woff2';
-import geistMono from './fontes/GeistMono-VF.woff2';
+// Sistema de duas famílias (estudo de tipografia, nov/2026):
+//  · Instrument Serif — voz editorial: frases da narração e títulos (caixa mista)
+//  · Fira Sans (humanista) — etiquetas e textos curtos; Fira Sans Condensed — números, placares e ganchos de 1–3 palavras
 import instrumentItalico from './fontes/InstrumentSerif-Italic.woff2';
 import instrumentRegular from './fontes/InstrumentSerif-Regular.woff2';
+import firaSemi from './fontes/FiraSans-SemiBold.woff2';
+import firaBold from './fontes/FiraSans-Bold.woff2';
+import firaExtra from './fontes/FiraSans-ExtraBold.woff2';
+import firaCondExtra from './fontes/FiraSansCondensed-ExtraBold.woff2';
 
 const FONTES: Array<[string, string, string, string?]> = [
   ['InstrumentSerif', instrumentItalico, '400', 'italic'],
   ['InstrumentSerif', instrumentRegular, '400', 'normal'],
-  ['Humane', humaneBold, '700'],
-  ['Geist', geist, '100 900'],
-  ['GeistSerif', geistSerif, '100 900'],
-  ['GeistMono', geistMono, '100 900'],
+  ['FiraSans', firaSemi, '600'],
+  ['FiraSans', firaBold, '700'],
+  ['FiraSans', firaExtra, '800'],
+  ['FiraSansCondensed', firaCondExtra, '800'],
 ];
 
 let carregado = false;

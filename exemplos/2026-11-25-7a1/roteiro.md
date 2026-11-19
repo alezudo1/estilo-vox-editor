@@ -7,12 +7,12 @@ cor-extra: coral
 
 # Exemplo com imagens provisórias: estádio e atacante são genéricos, gerados por IA.
 
-[gancho: "O dia em que o futebol brasileiro parou"]
+[gancho: "7 A 1"]
 [objeto: bola]
-O 7 a 1 não foi só uma goleada.
+O 7 a 1 não foi só uma goleada. _Foi o dia em que o futebol brasileiro parou._
 
 [fonte: "FIFA"]
-[foto: estadio.jpg | etiqueta: "Belo Horizonte, 8 de julho de 2014"]
+[foto: estadio.jpg | etiqueta: "8 de julho, 2014"]
 Foi a semifinal da Copa, dentro de casa, no **Mineirão**.
 
 [numero: "29 minutos" | legenda: "Em apenas"]
@@ -23,7 +23,7 @@ Em 29 minutos, a Alemanha _já tinha feito cinco._
 Quatro deles em seis minutos.
 
 [fundo: escuro]
-[foto: atacante.jpg | recorte | cor]
+[foto: atacante.jpg | recorte]
 No meio disso, **Klose** virou _o maior artilheiro da história das Copas._
 [circulo: "Klose"]
 Com 16 gols.

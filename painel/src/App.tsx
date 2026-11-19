@@ -202,6 +202,10 @@ const ZonaSegura: React.FC = () => (
     <path d={`M0,${ZONA.topo}H${ZONA.esquerda}V${ZONA.base}H0Z M${ZONA.direitaAlta},${ZONA.topo}H${LARGURA}V${ZONA.degrau}H${ZONA.direitaAlta}Z`} className="proibida" />
     <rect x={0} y={ZONA.legenda.topo} width={LARGURA} height={ZONA.legenda.base - ZONA.legenda.topo} className="legenda" />
     <text x={ZONA.esquerda + 10} y={ZONA.legenda.topo + 50}>reservado à legenda</text>
+    <line x1={0} x2={LARGURA} y1={ZONA.corte45.topo} y2={ZONA.corte45.topo} className="corte" />
+    <line x1={0} x2={LARGURA} y1={ZONA.corte45.base} y2={ZONA.corte45.base} className="corte" />
+    <text x={LARGURA - 20} y={ZONA.corte45.topo - 12} textAnchor="end" className="corte-txt">corte 4:5 do feed</text>
+    <line x1={ZONA.esquerda} x2={ZONA.esquerda} y1={ZONA.topo} y2={ZONA.base} className="corte" />
   </svg>
 );
 

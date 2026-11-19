@@ -294,6 +294,7 @@ export function validarRitmo(plano: Plano) {
     c.elementos.forEach((e) => eventos.add(e.inicio));
     c.sobreposicoes.forEach((o) => eventos.add(o.inicio));
     c.etiquetas.forEach((e) => eventos.add(e.inicio));
+    c.frases.forEach((f) => eventos.add(f.inicio));
   }
   const ts = [...eventos].sort((a, b) => a - b);
   ts.push(plano.meta.duracao);
@@ -302,6 +303,21 @@ export function validarRitmo(plano: Plano) {
     if (vazio > 7) plano.avisos.push({ nivel: 'erro', tempo: ts[k - 1], mensagem: `${vazio.toFixed(1)} s sem nada novo na tela (máximo 7 s).` });
     else if (vazio > 4) plano.avisos.push({ nivel: 'alerta', tempo: ts[k - 1], mensagem: `${vazio.toFixed(1)} s sem nada novo na tela (ideal ≤ 4 s, salvo leitura).` });
   }
+  // leitura (estudo de legibilidade: blocos curtos, ≥ 0,83 s na tela, até 2 linhas)
+  for (const c of plano.cenas) {
+    c.frases.forEach((f, k) => {
+      const fim = k < c.frases.length - 1 ? c.frases[k + 1].inicio : c.fim;
+      const n = f.palavras.length;
+      if (n > 10) plano.avisos.push({ nivel: 'alerta', tempo: f.inicio, mensagem: `Frase na tela com ${n} palavras ("${f.palavras.slice(0, 4).map((p) => p.texto).join(' ')}…"). Ideal: até ~8. O resto fica só na legenda.` });
+      if (fim - f.inicio < 0.83) plano.avisos.push({ nivel: 'alerta', tempo: f.inicio, mensagem: `Frase fica só ${(fim - f.inicio).toFixed(2)} s na tela (mínimo ~0,83 s para ler).` });
+    });
+    for (const e of c.etiquetas)
+      if (e.texto.split(/\s+/).length > 4) plano.avisos.push({ nivel: 'info', tempo: e.inicio, mensagem: `Etiqueta "${e.texto}" tem mais de 4 palavras: vai em caixa mista. Rótulo curto lê mais rápido.` });
+    for (const e of c.elementos)
+      if (e.tipo === 'gancho' && (e.params.texto ?? '').split(/\s+/).length > 3)
+        plano.avisos.push({ nivel: 'info', tempo: 0, mensagem: 'Gancho com mais de 3 palavras entra como frase editorial. Para impacto máximo use 1–3 palavras (ex.: "7 A 1").' });
+  }
+
   const primeira = plano.cenas[0];
   if (primeira && !primeira.elementos.some((e) => e.tipo === 'gancho'))
     plano.avisos.push({ nivel: 'alerta', tempo: 0, mensagem: 'O vídeo não abre com [gancho]: o primeiro quadro deve ter o título.' });

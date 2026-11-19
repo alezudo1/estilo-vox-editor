@@ -27,7 +27,7 @@ export const Video: React.FC<PropsVideo> = ({ plano, base }) => {
         const de = q(cena.inicio);
         const dur = Math.max(1, q(cena.fim) - de);
         const tinta = tintaDo(cena.fundo, plano.meta.corExtra);
-        const temFrase = cena.frases.length > 0 || cena.elementos.some((e) => e.tipo === 'gancho');
+        const temFrase = cena.frases.length > 0 || cena.elementos.some((e) => e.tipo === 'gancho' && (e.params.texto ?? '').split(/\s+/).length > 3);
         const contagem: Record<string, number> = {};
         const totais: Record<string, number> = {};
         cena.elementos.forEach((e) => (totais[e.tipo] = (totais[e.tipo] ?? 0) + 1));
