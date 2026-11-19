@@ -1,6 +1,8 @@
 // Converte o roteiro marcado (vocabulario-marcacoes.md) em um plano de cenas.
 // Sem dependências de Node: roda no painel, no servidor e no render.
 
+import { diagramarFrase } from '../medidas';
+import { FAIXA_FRASE, larguraCentrada } from '../tema';
 import type { Aviso, Cena, Elemento, Palavra, Plano, Sobreposicao, Tema, TipoCena, TipoSobreposicao } from './tipos';
 
 const TIPOS_CENA: TipoCena[] = ['gancho', 'foto', 'objeto', 'doc', 'numero', 'grafico', 'card-final'];
@@ -12,7 +14,7 @@ const POSICIONAL: Record<string, string> = {
   gancho: 'texto', foto: 'arquivo', objeto: 'nome', doc: 'arquivo', fundo: 'valor', fonte: 'valor', numero: 'valor', grafico: 'tipo', circulo: 'alvo', seta: 'alvo',
 };
 const TEMAS: Tema[] = ['arquivo', 'diagrama', 'dados', 'colagem'];
-const CORES_NOMEADAS: Record<string, string> = { coral: '#FF6B57' };
+const CORES_NOMEADAS: Record<string, string> = { limao: '#CFFC00', acento: '#CFFC00', coral: '#FF6B57' };
 
 export const RITMO_PADRAO = 2.7; // palavras por segundo (estimativa até o alinhamento da voz)
 
@@ -66,7 +68,7 @@ export function analisarRoteiro(texto: string, ritmo = RITMO_PADRAO): Plano {
   const linhas = texto.replace(/\r\n/g, '\n').split('\n');
 
   // ---- cabeçalho
-  const meta: Plano['meta'] = { titulo: 'Sem título', tema: 'arquivo', fundo: 'escuro', corExtra: CORES_NOMEADAS.coral, duracao: 0, origemTempo: 'estimado' };
+  const meta: Plano['meta'] = { titulo: 'Sem título', tema: 'arquivo', fundo: 'escuro', corExtra: CORES_NOMEADAS.limao, duracao: 0, origemTempo: 'estimado' };
   let i = 0;
   while (i < linhas.length && linhas[i].trim() === '') i++;
   if (linhas[i]?.trim() === '---') {
@@ -85,12 +87,12 @@ export function analisarRoteiro(texto: string, ritmo = RITMO_PADRAO): Plano {
       } else if (chave === 'cor-extra') {
         const cor = CORES_NOMEADAS[valor] ?? valor;
         if (/^#[0-9a-f]{6}$/i.test(cor)) meta.corExtra = cor;
-        else avisos.push({ nivel: 'erro', linha: i + 1, mensagem: `Cor extra "${valor}" inválida. Use coral ou um hex como #FFD700.` });
+        else avisos.push({ nivel: 'erro', linha: i + 1, mensagem: `Cor extra "${valor}" inválida. Use limao (padrão) ou o hex do clube, como #FFD700.` });
       }
     }
     i++;
   } else {
-    avisos.push({ nivel: 'alerta', mensagem: 'Roteiro sem cabeçalho (--- ... ---). Usando tema arquivo, fundo escuro e cor extra coral.' });
+    avisos.push({ nivel: 'alerta', mensagem: 'Roteiro sem cabeçalho (--- ... ---). Usando tema arquivo, fundo escuro e o verde-limão como cor extra.' });
   }
 
   // ---- corpo
@@ -308,7 +310,9 @@ export function validarRitmo(plano: Plano) {
     c.frases.forEach((f, k) => {
       const fim = k < c.frases.length - 1 ? c.frases[k + 1].inicio : c.fim;
       const n = f.palavras.length;
-      if (n > 10) plano.avisos.push({ nivel: 'alerta', tempo: f.inicio, mensagem: `Frase na tela com ${n} palavras ("${f.palavras.slice(0, 4).map((p) => p.texto).join(' ')}…"). Ideal: até ~8. O resto fica só na legenda.` });
+      const d = diagramarFrase(f.palavras.map((p) => p.texto), larguraCentrada(FAIXA_FRASE.base) - 30, FAIXA_FRASE.base - FAIXA_FRASE.topo);
+      if (d.apertada) plano.avisos.push({ nivel: 'alerta', tempo: f.inicio, mensagem: `Frase "${f.palavras.slice(0, 4).map((p) => p.texto).join(' ')}…" não cabe em 2 linhas legíveis: encurte (com a Moon Get, até ~6–7 palavras).` });
+      else if (n > 10) plano.avisos.push({ nivel: 'alerta', tempo: f.inicio, mensagem: `Frase na tela com ${n} palavras ("${f.palavras.slice(0, 4).map((p) => p.texto).join(' ')}…"). Ideal: até ~8. O resto fica só na legenda.` });
       if (fim - f.inicio < 0.83) plano.avisos.push({ nivel: 'alerta', tempo: f.inicio, mensagem: `Frase fica só ${(fim - f.inicio).toFixed(2)} s na tela (mínimo ~0,83 s para ler).` });
     });
     for (const e of c.etiquetas)

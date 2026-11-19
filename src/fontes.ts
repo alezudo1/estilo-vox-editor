@@ -1,21 +1,13 @@
 import { continueRender, delayRender } from 'remotion';
-// Sistema de duas famílias (estudo de tipografia, nov/2026):
-//  · Instrument Serif — voz editorial: frases da narração e títulos (caixa mista)
-//  · Fira Sans (humanista) — etiquetas e textos curtos; Fira Sans Condensed — números, placares e ganchos de 1–3 palavras
-import instrumentItalico from './fontes/InstrumentSerif-Italic.woff2';
-import instrumentRegular from './fontes/InstrumentSerif-Regular.woff2';
-import firaSemi from './fontes/FiraSans-SemiBold.woff2';
-import firaBold from './fontes/FiraSans-Bold.woff2';
-import firaExtra from './fontes/FiraSans-ExtraBold.woff2';
-import firaCondExtra from './fontes/FiraSansCondensed-ExtraBold.woff2';
+// Sistema de duas fontes (escolha do Ale, 19/11/2026, com base no estudo de tipografia):
+//  · Arupala Grotesk Ultra — display: ganchos de 1–3 palavras em caixa alta, números, anos, placares
+//  · Moon Get Heavy — texto: frases da narração (caixa mista), etiquetas, rótulos
+import arupala from './fontes/ArupalaGrotesk-Ultra.woff2';
+import moonGet from './fontes/MoonGet-Heavy.woff2';
 
 const FONTES: Array<[string, string, string, string?]> = [
-  ['InstrumentSerif', instrumentItalico, '400', 'italic'],
-  ['InstrumentSerif', instrumentRegular, '400', 'normal'],
-  ['FiraSans', firaSemi, '600'],
-  ['FiraSans', firaBold, '700'],
-  ['FiraSans', firaExtra, '800'],
-  ['FiraSansCondensed', firaCondExtra, '800'],
+  ['ArupalaGrotesk', arupala, '900'],
+  ['MoonGet', moonGet, '800'],
 ];
 
 let carregado = false;

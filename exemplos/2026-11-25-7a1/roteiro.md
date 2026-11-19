@@ -1,15 +1,15 @@
 ---
 titulo: 7 a 1 em números
 tema: arquivo
-fundo: claro
-cor-extra: coral
+fundo: escuro
+cor-extra: limao
 ---
 
 # Exemplo com imagens provisórias: estádio e atacante são genéricos, gerados por IA.
 
 [gancho: "7 A 1"]
 [objeto: bola]
-O 7 a 1 não foi só uma goleada. _Foi o dia em que o futebol brasileiro parou._
+O 7 a 1 não foi só uma goleada. Foi o dia em que _o futebol brasileiro parou._
 
 [fonte: "FIFA"]
 [foto: estadio.jpg | etiqueta: "8 de julho, 2014"]
@@ -22,20 +22,19 @@ Em 29 minutos, a Alemanha _já tinha feito cinco._
 [numero: "4 gols" | legenda: "em seis minutos"]
 Quatro deles em seis minutos.
 
-[fundo: escuro]
 [foto: atacante.jpg | recorte]
-No meio disso, **Klose** virou _o maior artilheiro da história das Copas._
+No meio disso, **Klose** virou _o maior artilheiro das Copas._
 [circulo: "Klose"]
 Com 16 gols.
 
-[fundo: claro]
 [objeto: placar]
 No fim, _sete a um._
 
 [grafico: barras | dados: Brasil=1, Alemanha=7 | titulo: "Gols na semifinal"]
 O Brasil fez um. A Alemanha, sete.
 
+[fundo: claro]
 [doc: manchete.jpg | marcar: "maior derrota" | area: 6,40,88,9]
-_A maior derrota da história da seleção._
+_A maior derrota da seleção._
 
 [card-final]

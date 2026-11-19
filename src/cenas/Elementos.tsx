@@ -3,8 +3,8 @@ import { Img, useCurrentFrame } from 'remotion';
 import { lerDadosGrafico } from '../plano/parser';
 import type { Cena, Elemento } from '../plano/tipos';
 import { aproximacao, CASCATA, entrada, tracado, visivel } from '../movimento';
-import { blocosDeLeitura, diagramarFrase, larguraCondensada, larguraEtiquetaTexto, larguraItalico } from '../medidas';
-import { AREA, COR, FAIXA_FRASE, FONTE, LARGURA, PALCO, ZONA, type Tinta } from '../tema';
+import { blocosDeLeitura, diagramarFrase, larguraDisplay, larguraTexto, normalizarTexto } from '../medidas';
+import { EIXO, FAIXA_FRASE, FONTE, LARGURA, larguraCentrada, PALCO, PESO, ZONA, type Tinta } from '../tema';
 
 export interface Contexto {
   cena: Cena;
@@ -102,25 +102,24 @@ const Hachura: React.FC<{ largura: number; cor: string; inicio: number }> = ({ l
 };
 
 export const ganchoCurto = (cena: Cena) => cena.elementos.some((e) => e.tipo === 'gancho' && (e.params.texto ?? '').split(/\s+/).filter(Boolean).length <= 3);
-const ALTURA_GANCHO = 330; // faixa do título curto quando divide a cena com uma imagem
+const ALTURA_GANCHO = 300; // faixa do título curto quando divide a cena com uma imagem
 const limitesPalco = (temFrase: boolean, cena?: Cena) => ({
   topo: PALCO.topo + (cena && ganchoCurto(cena) && cena.elementos.some((e) => e.tipo !== 'gancho') ? ALTURA_GANCHO - 40 : 0),
   base: temFrase ? PALCO.base : PALCO.baseSemFrase,
 });
 const corPedida = (valor: string | undefined, tinta: Tinta) => (valor ? (valor === 'sim' || valor === 'destaque' || valor === 'alerta' ? tinta.alerta : valor) : undefined);
 
-// ---------- Fundo de papel (textura da biblioteca + quadriculado leve)
+// ---------- Fundo (textura da biblioteca + quadriculado leve)
 export const Fundo: React.FC<{ tinta: Tinta; url: Contexto['url'] }> = ({ tinta, url }) => {
   const textura = url(`textura:${tinta.textura}`);
-  const claro = tinta.papel === COR.papel;
   return (
     <>
       <div style={{ position: 'absolute', inset: 0, background: tinta.papel }} />
-      {textura && <Img src={textura} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', mixBlendMode: claro ? 'multiply' : 'overlay', opacity: claro ? 1 : 0.5 }} />}
+      {textura && <Img src={textura} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', mixBlendMode: tinta.claro ? 'multiply' : 'overlay', opacity: tinta.claro ? 0.6 : 0.35 }} />}
       <svg width={LARGURA} height={1920} style={{ position: 'absolute', inset: 0 }}>
         <defs>
           <pattern id="quadriculado" width={54} height={54} patternUnits="userSpaceOnUse">
-            <path d="M54 0H0V54" fill="none" stroke={tinta.tinta} strokeWidth={1.2} opacity={claro ? 0.07 : 0.06} />
+            <path d="M54 0H0V54" fill="none" stroke={tinta.tinta} strokeWidth={1.2} opacity={tinta.claro ? 0.06 : 0.045} />
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#quadriculado)" />
@@ -129,39 +128,39 @@ export const Fundo: React.FC<{ tinta: Tinta; url: Contexto['url'] }> = ({ tinta,
   );
 };
 
-// ---------- Linha "Fonte: ..." no topo
+// ---------- Linha "Fonte: ..." no topo, centrada
 export const LinhaFonte: React.FC<{ texto: string; tinta: Tinta }> = ({ texto, tinta }) => (
-  <div style={{ position: 'absolute', left: AREA.x, top: ZONA.textoTopo, fontFamily: FONTE.texto, fontWeight: 600, fontSize: 26, color: tinta.tinta, opacity: 0.7 }}>Fonte: {texto}</div>
+  <div style={{ position: 'absolute', left: EIXO - 400, width: 800, top: ZONA.textoTopo, textAlign: 'center', fontFamily: FONTE.texto, fontWeight: PESO.texto, fontSize: 26, color: tinta.secundaria }}>Fonte: {normalizarTexto(texto)}</div>
 );
 
-// ---------- Frase editorial (_trecho_): até 2 linhas, entra em blocos de 1–3 palavras junto com a voz.
-// A ênfase é por luminância: a 2ª linha ganha um marca-texto largo no acento (sobrevive à compressão 4:2:0),
-// o texto continua escuro. Nada de texto fino colorido.
-export const Frase: React.FC<{ palavras: { texto: string; inicio: number }[]; tinta: Tinta; centro?: boolean; topo?: number; base?: number; corpoMax?: number }> = ({ palavras, tinta, centro, topo = FAIXA_FRASE.topo, base = FAIXA_FRASE.base, corpoMax = 124 }) => {
+// ---------- Frase (_trecho_): centrada, até 2 linhas, entra em blocos de 1–3 palavras junto com a voz.
+// Ênfase por luminância: a 2ª linha ganha o marca-texto limão (área larga) com texto carvão.
+export const Frase: React.FC<{ palavras: { texto: string; inicio: number }[]; tinta: Tinta; topo?: number; base?: number; corpoMax?: number }> = ({ palavras, tinta, topo = FAIXA_FRASE.topo, base = FAIXA_FRASE.base, corpoMax = 92 }) => {
   const frame = useCurrentFrame();
-  const textos = palavras.map((p) => p.texto);
-  const { corpo, linhas } = diagramarFrase(textos, AREA.largura - 20, base - topo, corpoMax);
+  const textos = palavras.map((p) => normalizarTexto(p.texto));
+  const largura = larguraCentrada(base);
+  const { corpo, linhas } = diagramarFrase(textos, largura - 30, base - topo, corpoMax);
   const blocos = blocosDeLeitura(textos);
   const inicioDe = (i: number) => palavras[blocos.find((b) => b.includes(i))?.[0] ?? i].inicio;
-  const alturaLinha = corpo * 1.0;
+  const alturaLinha = corpo * 1.22;
   return (
-    <div style={{ position: 'absolute', left: AREA.x, top: topo, width: AREA.largura, height: base - topo, display: 'flex', flexDirection: 'column', justifyContent: centro ? 'center' : 'flex-end', alignItems: centro ? 'center' : 'flex-start' }}>
+    <div style={{ position: 'absolute', left: EIXO - largura / 2, top: topo, width: largura, height: base - topo, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
       {linhas.map((idx, l) => {
         const enfase = linhas.length > 1 && l === linhas.length - 1;
-        const iniLinha = inicioDe(idx[0]);
-        const marca = enfase ? tracado(frame, iniLinha, 6) : 0;
+        const marca = enfase ? tracado(frame, inicioDe(idx[0]), 6) : 0;
+        const larguraLinha = larguraTexto(idx.map((i) => textos[i]).join(' '), corpo);
         return (
-          <div key={l} style={{ position: 'relative', height: alturaLinha, paddingLeft: centro ? 0 : l * corpo * 0.3, whiteSpace: 'nowrap' }}>
+          <div key={l} style={{ position: 'relative', height: alturaLinha, marginTop: enfase ? corpo * 0.1 : 0, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
             {enfase && (
-              <div style={{ position: 'absolute', left: (centro ? 0 : l * corpo * 0.3) - corpo * 0.1, top: corpo * 0.12, height: corpo * 0.9, width: `calc((100% - ${centro ? 0 : l * corpo * 0.3}px + ${corpo * 0.2}px) * ${marca})`, background: tinta.acento, transform: 'rotate(-0.6deg)' }} />
+              <div style={{ position: 'absolute', left: '50%', top: corpo * 0.06, height: corpo * 1.12, width: (larguraLinha + corpo * 0.5) * marca, transform: `translateX(${-(larguraLinha + corpo * 0.5) / 2}px) rotate(-0.8deg)`, background: tinta.acento }} />
             )}
-            <span style={{ position: 'relative', fontFamily: FONTE.editorial, fontStyle: 'italic', fontSize: corpo, lineHeight: `${alturaLinha}px`, letterSpacing: -corpo * 0.005, color: enfase ? tinta.acentoTexto : tinta.tinta }}>
+            <span style={{ position: 'relative', fontFamily: FONTE.texto, fontWeight: PESO.texto, fontSize: corpo, lineHeight: `${alturaLinha}px`, color: enfase ? tinta.acentoTexto : tinta.tinta }}>
               {idx.map((i) => {
                 const ini = inicioDe(i);
                 const e = entrada(frame, ini, 4);
                 return (
                   <span key={i} style={{ display: 'inline-block', opacity: visivel(frame, ini) ? 1 : 0, transform: `translateY(${(1 - e) * corpo * 0.25}px)` }}>
-                    {palavras[i].texto}{i < textos.length - 1 ? '\u00a0' : ''}
+                    {textos[i]}{i < idx[idx.length - 1] ? ' ' : ''}
                   </span>
                 );
               })}
@@ -173,26 +172,26 @@ export const Frase: React.FC<{ palavras: { texto: string; inicio: number }[]; ti
   );
 };
 
-// ---------- Etiquetas (caixa de tinta com texto em caixa-alta), empilhadas no topo do palco
-export const ETIQUETA = { altura: 52, x: AREA.x, y: ZONA.textoTopo + 45, passo: 64, corpo: 28 } as const;
-export const posicaoEtiqueta = (indice: number) => ({ x: ETIQUETA.x, y: ETIQUETA.y + indice * ETIQUETA.passo });
+// ---------- Etiquetas: caixa sólida, centradas no eixo, empilhadas no topo do palco
+export const ETIQUETA = { altura: 56, y: ZONA.textoTopo + 48, passo: 68, corpo: 30 } as const;
 export const caixaAltaEtiqueta = (texto: string) => texto.trim().split(/\s+/).length <= 4; // caixa alta só em rótulos curtos
-export const larguraEtiqueta = (texto: string) => 32 + larguraEtiquetaTexto(texto, ETIQUETA.corpo) * (caixaAltaEtiqueta(texto) ? 1 : 0.82);
+export const larguraEtiqueta = (texto: string) => 36 + larguraTexto(texto, ETIQUETA.corpo, caixaAltaEtiqueta(texto));
+export const posicaoEtiqueta = (indice: number, texto: string) => ({ x: EIXO - larguraEtiqueta(texto) / 2, y: ETIQUETA.y + indice * ETIQUETA.passo });
 
 export const Etiqueta: React.FC<{ texto: string; inicio: number; indice: number; tinta: Tinta }> = ({ texto, inicio, indice, tinta }) => {
   const frame = useCurrentFrame();
   if (!visivel(frame, inicio)) return null;
   const p = entrada(frame, inicio, 6);
-  const { x, y } = posicaoEtiqueta(indice);
+  const { x, y } = posicaoEtiqueta(indice, texto);
+  const alta = caixaAltaEtiqueta(texto);
   return (
-    <div style={{ position: 'absolute', left: x, top: y, height: ETIQUETA.altura, display: 'flex', alignItems: 'center', padding: '0 16px', background: tinta.etiqueta, transformOrigin: 'left center', transform: `scaleX(${p}) rotate(-1deg)`, boxShadow: `3px 4px 0 ${tinta.sombra}`, zIndex: 5 }}>
-      <span style={{ fontFamily: FONTE.texto, fontWeight: caixaAltaEtiqueta(texto) ? 800 : 700, fontSize: ETIQUETA.corpo, letterSpacing: caixaAltaEtiqueta(texto) ? 0.8 : 0, color: tinta.etiquetaTexto, textTransform: caixaAltaEtiqueta(texto) ? 'uppercase' : 'none', whiteSpace: 'nowrap', opacity: visivel(frame, inicio + 2) ? 1 : 0 }}>{texto}</span>
+    <div style={{ position: 'absolute', left: x, top: y, width: larguraEtiqueta(texto), height: ETIQUETA.altura, display: 'flex', alignItems: 'center', justifyContent: 'center', background: tinta.etiqueta, transformOrigin: 'center', transform: `scaleX(${p}) rotate(${indice % 2 ? 1 : -1}deg)`, boxShadow: `4px 5px 0 ${tinta.sombra}`, zIndex: 5 }}>
+      <span style={{ fontFamily: FONTE.texto, fontWeight: PESO.texto, fontSize: ETIQUETA.corpo, color: tinta.etiquetaTexto, textTransform: alta ? 'uppercase' : 'none', whiteSpace: 'nowrap', opacity: visivel(frame, inicio + 2) ? 1 : 0 }}>{normalizarTexto(texto)}</span>
     </div>
   );
 };
 
-// ---------- Gancho: no primeiro quadro. 1–3 palavras → display condensada em caixa alta (placar, ano, número);
-// mais que isso → frase editorial em caixa mista.
+// ---------- Gancho: no primeiro quadro. 1–3 palavras → display (Arupala) em caixa alta; mais que isso → frase.
 export const Gancho: React.FC<PropsElemento> = ({ el, tinta, cena }) => {
   const texto = el.params.texto ?? '';
   const palavras = texto.split(/\s+/).filter(Boolean);
@@ -201,19 +200,20 @@ export const Gancho: React.FC<PropsElemento> = ({ el, tinta, cena }) => {
     const temFrase = cena.frases.length > 0;
     const topo = PALCO.topo;
     const base = temImagem ? PALCO.topo + ALTURA_GANCHO - 20 : temFrase ? PALCO.base : PALCO.baseSemFrase;
-    const corpo = Math.min((base - topo) / 0.95, (AREA.largura - 10) / Math.max(0.1, larguraCondensada(texto, 1)));
+    const largura = larguraCentrada(topo + 10);
+    const corpo = Math.min((base - topo) / 0.9, (largura - 20) / Math.max(0.1, larguraDisplay(texto, 1)));
     return (
-      <div style={{ position: 'absolute', left: AREA.x, top: topo, width: AREA.largura, height: base - topo, display: 'flex', alignItems: temImagem ? 'flex-start' : 'center' }}>
-        <span style={{ fontFamily: FONTE.numero, fontWeight: 800, fontSize: corpo, lineHeight: 0.95, color: tinta.tinta, textTransform: 'uppercase', whiteSpace: 'nowrap', letterSpacing: -corpo * 0.01 }}>{texto}</span>
+      <div style={{ position: 'absolute', left: EIXO - largura / 2, top: topo, width: largura, height: base - topo, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontFamily: FONTE.display, fontWeight: PESO.display, fontSize: corpo, lineHeight: 0.9, color: tinta.tinta, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{texto}</span>
       </div>
     );
   }
   const ps = palavras.map((t) => ({ texto: t, inicio: -99 }));
-  return temImagem ? <Frase palavras={ps} tinta={tinta} /> : <Frase palavras={ps} tinta={tinta} centro topo={PALCO.topo} base={PALCO.baseSemFrase} corpoMax={180} />;
+  return temImagem ? <Frase palavras={ps} tinta={tinta} /> : <Frase palavras={ps} tinta={tinta} topo={PALCO.topo} base={PALCO.base} corpoMax={120} />;
 };
 
 // ---------- Objeto da biblioteca: recorte em P&B, sombra e hachura, entra "caindo" no lugar
-export const Objeto: React.FC<PropsElemento> = ({ el, inicio, tinta, url, temFrase, duracaoCena, slot , cena }) => {
+export const Objeto: React.FC<PropsElemento> = ({ el, inicio, tinta, url, temFrase, duracaoCena, slot, cena }) => {
   const frame = useCurrentFrame();
   if (!visivel(frame, inicio)) return null;
   const src = url(`objeto:${el.params.nome}`);
@@ -230,9 +230,9 @@ export const Objeto: React.FC<PropsElemento> = ({ el, inicio, tinta, url, temFra
         {src ? (
           <Img src={src} style={{ height: '100%', maxWidth: PALCO.largura, objectFit: 'contain', filter: `url(#${id}) drop-shadow(14px 18px 10px ${tinta.sombra})` }} />
         ) : (
-          <div style={{ width: 460, height: '100%', border: `4px dashed ${tinta.alerta}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONTE.texto, fontSize: 34, color: tinta.tinta, textAlign: 'center', padding: 20 }}>falta o objeto “{el.params.nome}”</div>
+          <div style={{ width: 460, height: '100%', border: `4px dashed ${tinta.acento}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONTE.texto, fontWeight: PESO.texto, fontSize: 34, color: tinta.tinta, textAlign: 'center', padding: 20 }}>falta o objeto "{el.params.nome}"</div>
         )}
-        <Hachura largura={380} cor={tinta.tinta} inicio={inicio} />
+        <Hachura largura={380} cor={tinta.secundaria} inicio={inicio} />
       </div>
     </div>
   );
@@ -241,7 +241,7 @@ export const Objeto: React.FC<PropsElemento> = ({ el, inicio, tinta, url, temFra
 // ---------- Foto. Padrão: cor tratada (mesmo grade em todas, tom de pele preservado; quente no claro, fria no escuro).
 //   | pb → preto e branco de jornal · | cor → P&B tingido na cor de alerta · | recorte → pessoa recortada com sombra
 //   | tela: cheia → ocupa a tela · sem nada → foto de papel rasgado, inclinada
-export const Foto: React.FC<PropsElemento> = ({ el, inicio, tinta, url, temFrase, duracaoCena , cena }) => {
+export const Foto: React.FC<PropsElemento> = ({ el, inicio, tinta, url, temFrase, duracaoCena, cena }) => {
   const frame = useCurrentFrame();
   if (!visivel(frame, inicio)) return null;
   const arq = el.params.arquivo ?? '';
@@ -265,24 +265,24 @@ export const Foto: React.FC<PropsElemento> = ({ el, inicio, tinta, url, temFrase
   }
   if (recorte) {
     return (
-      <div style={{ position: 'absolute', left: 0, width: LARGURA, top: topo + 40, height: base - topo - 30, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      <div style={{ position: 'absolute', left: EIXO - 470, width: 940, top: topo + 40, height: base - topo - 30, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
         {filtroSvg}
-        <Img src={recorte} style={{ height: '100%', maxWidth: '90%', objectFit: 'contain', transformOrigin: 'bottom center', transform: `translateY(${(1 - e) * 120}px) scale(${push})`, filter: `${filtro} drop-shadow(18px 20px 12px ${tinta.sombra})` }} />
+        <Img src={recorte} style={{ height: '100%', maxWidth: '100%', objectFit: 'contain', transformOrigin: 'bottom center', transform: `translateY(${(1 - e) * 120}px) scale(${push})`, filter: `${filtro} drop-shadow(18px 20px 12px ${tinta.sombra})` }} />
       </div>
     );
   }
   return (
     <div style={{ position: 'absolute', left: PALCO.centroX - PALCO.largura / 2, top: topo + 20, width: PALCO.largura, height: base - topo - 40, transform: `translateY(${(1 - e) * 100}px) rotate(${giro}deg) scale(${push})`, filter: `drop-shadow(12px 16px 10px ${tinta.sombra})` }}>
       {filtroSvg}
-      <div style={{ width: '100%', height: '100%', clipPath: bordaRasgada(arq), background: COR.papel, padding: 14 }}>
-        {src ? <Img src={src} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: filtro }} /> : <div style={{ width: '100%', height: '100%', background: '#bbb' }} />}
+      <div style={{ width: '100%', height: '100%', clipPath: bordaRasgada(arq), background: tinta.claro ? '#FFFFFF' : '#EDEDED', padding: 14 }}>
+        {src ? <Img src={src} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: filtro }} /> : <div style={{ width: '100%', height: '100%', background: '#888' }} />}
       </div>
     </div>
   );
 };
 
-// ---------- Documento: folha de papel inclinada com marca-texto menta
-export const Doc: React.FC<PropsElemento> = ({ el, inicio, url, tinta, temFrase, duracaoCena , cena }) => {
+// ---------- Documento: folha de papel inclinada com marca-texto no acento
+export const Doc: React.FC<PropsElemento> = ({ el, inicio, url, tinta, temFrase, duracaoCena, cena }) => {
   const frame = useCurrentFrame();
   if (!visivel(frame, inicio)) return null;
   const e = entrada(frame, inicio, 6);
@@ -292,59 +292,62 @@ export const Doc: React.FC<PropsElemento> = ({ el, inicio, url, tinta, temFrase,
   const { topo, base } = limitesPalco(temFrase, cena);
   const src = url(`imagem:${el.params.arquivo}`);
   return (
-    <div style={{ position: 'absolute', left: AREA.x, top: topo, width: LARGURA - AREA.x * 2, height: base - topo, display: 'flex', alignItems: 'center', justifyContent: 'center', transform: `translateY(${(1 - e) * 140}px) rotate(-2deg) scale(${push})` }}>
-      <div style={{ position: 'relative', background: COR.papel, padding: 22, boxShadow: `14px 18px 0 ${tinta.sombra}`, maxWidth: '100%', maxHeight: '100%' }}>
-        {src && <Img src={src} style={{ display: 'block', maxWidth: 820, maxHeight: base - topo - 60, objectFit: 'contain', mixBlendMode: 'multiply' }} />}
-        <div style={{ position: 'absolute', left: `calc(22px + ${ax}% * 0.95)`, top: `calc(22px + ${ay}% * 0.95)`, width: `${aw * marca * 0.95}%`, height: `${ah * 0.95}%`, background: COR.menta, mixBlendMode: 'multiply' }} />
+    <div style={{ position: 'absolute', left: EIXO - 420, top: topo, width: 840, height: base - topo, display: 'flex', alignItems: 'center', justifyContent: 'center', transform: `translateY(${(1 - e) * 140}px) rotate(-2deg) scale(${push})` }}>
+      <div style={{ position: 'relative', background: '#F7F5F0', padding: 22, boxShadow: `14px 18px 0 ${tinta.sombra}`, maxWidth: '100%', maxHeight: '100%' }}>
+        {src && <Img src={src} style={{ display: 'block', maxWidth: 780, maxHeight: base - topo - 60, objectFit: 'contain', mixBlendMode: 'multiply' }} />}
+        <div style={{ position: 'absolute', left: `calc(22px + ${ax}% * 0.95)`, top: `calc(22px + ${ay}% * 0.95)`, width: `${aw * marca * 0.95}%`, height: `${ah * 0.95}%`, background: tinta.acento, mixBlendMode: 'multiply' }} />
       </div>
     </div>
   );
 };
 
-// ---------- Número em caixa menta, com a legenda como etiqueta logo acima
-export const Numero: React.FC<PropsElemento> = ({ el, inicio, tinta, temFrase, slot , cena }) => {
+// ---------- Número em caixa no acento (display), com a legenda como etiqueta logo acima; centrado
+export const Numero: React.FC<PropsElemento> = ({ el, inicio, tinta, temFrase, slot, cena }) => {
   const frame = useCurrentFrame();
   if (!visivel(frame, inicio)) return null;
   const { topo, base } = limitesPalco(temFrase, cena);
   const altura = (base - topo) / slot.total;
   const valor = (el.params.valor ?? '').toUpperCase();
-  const corpo = Math.min(190, (AREA.largura - 90) / Math.max(0.1, larguraCondensada(valor, 1)));
+  const largura = larguraCentrada(topo + slot.indice * altura + altura);
+  const corpo = Math.min(170, altura * 0.42, (largura - 90) / Math.max(0.1, larguraDisplay(valor, 1)));
   const caixa = entrada(frame, inicio, 4);
   const leg = el.params.legenda;
   const giro = slot.indice % 2 ? 1.2 : -1.5;
   return (
-    <div style={{ position: 'absolute', left: AREA.x + 10, top: topo + slot.indice * altura, height: altura, width: AREA.largura, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', gap: 16 }}>
+    <div style={{ position: 'absolute', left: EIXO - largura / 2, top: topo + slot.indice * altura, height: altura, width: largura, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
       {leg && (
-        <div style={{ background: tinta.etiqueta, padding: '8px 16px', transform: `rotate(${giro * 0.6}deg)`, boxShadow: `3px 4px 0 ${tinta.sombra}` }}>
-          <span style={{ fontFamily: FONTE.texto, fontWeight: caixaAltaEtiqueta(leg) ? 800 : 700, fontSize: 30, letterSpacing: caixaAltaEtiqueta(leg) ? 0.8 : 0, color: tinta.etiquetaTexto, textTransform: caixaAltaEtiqueta(leg) ? 'uppercase' : 'none' }}>{leg}</span>
+        <div style={{ background: tinta.etiqueta, padding: '8px 18px', transform: `rotate(${giro * 0.6}deg)`, boxShadow: `4px 5px 0 ${tinta.sombra}` }}>
+          <span style={{ fontFamily: FONTE.texto, fontWeight: PESO.texto, fontSize: 30, color: tinta.etiquetaTexto, textTransform: caixaAltaEtiqueta(leg) ? 'uppercase' : 'none' }}>{normalizarTexto(leg)}</span>
         </div>
       )}
-      <div style={{ background: tinta.acento, padding: `${corpo * 0.06}px ${corpo * 0.16}px`, transformOrigin: 'left center', transform: `rotate(${giro}deg) scaleX(${caixa})`, boxShadow: `6px 8px 0 ${tinta.sombra}` }}>
-        <span style={{ fontFamily: FONTE.numero, fontWeight: 800, fontSize: corpo, lineHeight: 1.05, letterSpacing: -corpo * 0.01, color: tinta.acentoTexto, whiteSpace: 'nowrap', opacity: visivel(frame, inicio + 2) ? 1 : 0 }}>{valor}</span>
+      <div style={{ background: tinta.acento, padding: `${corpo * 0.12}px ${corpo * 0.22}px ${corpo * 0.06}px`, transformOrigin: 'center', transform: `rotate(${giro}deg) scaleX(${caixa})`, boxShadow: `6px 8px 0 ${tinta.sombra}` }}>
+        <span style={{ fontFamily: FONTE.display, fontWeight: PESO.display, fontSize: corpo, lineHeight: 1, color: tinta.acentoTexto, whiteSpace: 'nowrap', opacity: visivel(frame, inicio + 2) ? 1 : 0 }}>{valor}</span>
       </div>
     </div>
   );
 };
 
-// ---------- Gráfico de barras: rótulos diretos; a cor de alerta fica na barra (área larga), nunca no número
-export const Grafico: React.FC<PropsElemento> = ({ el, inicio, tinta, temFrase , cena }) => {
+// ---------- Gráfico de barras: rótulos diretos; o acento fica na maior barra (área larga), nunca no número
+export const Grafico: React.FC<PropsElemento> = ({ el, inicio, tinta, temFrase, cena }) => {
   const frame = useCurrentFrame();
   if (!visivel(frame, inicio)) return null;
   const dados = lerDadosGrafico(el.params.dados);
   const max = Math.max(...dados.map((d) => d.valor), 1);
   const { topo, base } = limitesPalco(temFrase, cena);
-  const topoBarras = topo + (el.params.titulo ? 260 : 150);
+  const topoBarras = topo + (el.params.titulo ? 270 : 160);
   const baseBarras = base - 70;
   const util = baseBarras - topoBarras;
+  const largura = larguraCentrada(baseBarras);
   const gap = 50;
-  const larg = Math.min(300, (AREA.largura - gap * (dados.length - 1)) / Math.max(1, dados.length));
-  const esquerda = AREA.x + (AREA.largura - (larg * dados.length + gap * (dados.length - 1))) / 2;
+  const larg = Math.min(260, (largura - gap * (dados.length - 1)) / Math.max(1, dados.length));
+  const total = larg * dados.length + gap * (dados.length - 1);
+  const esquerda = EIXO - total / 2;
   return (
     <>
       {el.params.titulo && (
-        <div style={{ position: 'absolute', left: AREA.x, top: topo + 10, width: AREA.largura, fontFamily: FONTE.editorial, fontStyle: 'italic', fontSize: 88, lineHeight: 1, color: tinta.tinta }}>{el.params.titulo}</div>
+        <div style={{ position: 'absolute', left: EIXO - 420, top: topo + 10, width: 840, textAlign: 'center', fontFamily: FONTE.texto, fontWeight: PESO.texto, fontSize: 64, lineHeight: 1.1, color: tinta.tinta }}>{normalizarTexto(el.params.titulo)}</div>
       )}
-      <div style={{ position: 'absolute', left: AREA.x - 10, top: baseBarras, width: AREA.largura + 20, height: 4, background: tinta.tinta, opacity: 0.8 }} />
+      <div style={{ position: 'absolute', left: esquerda - 30, top: baseBarras, width: total + 60, height: 4, background: tinta.secundaria }} />
       {dados.map((d, k) => {
         const ini = inicio + 4 + k * CASCATA * 2;
         if (!visivel(frame, ini)) return null;
@@ -354,30 +357,32 @@ export const Grafico: React.FC<PropsElemento> = ({ el, inicio, tinta, temFrase ,
         const maior = d.valor === max;
         return (
           <React.Fragment key={k}>
-            <div style={{ position: 'absolute', left: x, top: baseBarras - h, width: larg, height: h, background: maior ? tinta.alerta : tinta.tinta, opacity: maior ? 1 : 0.85, boxShadow: `8px 0 0 ${tinta.sombra}` }} />
-            <div style={{ position: 'absolute', left: x, top: baseBarras - h - 140, width: larg, textAlign: 'center', fontFamily: FONTE.numero, fontWeight: 800, fontSize: 130, lineHeight: 1, color: tinta.tinta, opacity: cresce > 0.9 ? 1 : 0 }}>
+            <div style={{ position: 'absolute', left: x, top: baseBarras - h, width: larg, height: h, background: maior ? tinta.alerta : tinta.claro ? '#3A3A3A' : COR_BARRA_ESCURO, boxShadow: `8px 0 0 ${tinta.sombra}` }} />
+            <div style={{ position: 'absolute', left: x - 20, top: baseBarras - h - 140, width: larg + 40, textAlign: 'center', fontFamily: FONTE.display, fontWeight: PESO.display, fontSize: 120, lineHeight: 1, color: tinta.tinta, opacity: cresce > 0.9 ? 1 : 0 }}>
               {Number.isInteger(d.valor) ? d.valor : d.valor.toLocaleString('pt-BR')}
             </div>
-            <div style={{ position: 'absolute', left: x - 20, top: baseBarras + 16, width: larg + 40, textAlign: 'center', fontFamily: FONTE.texto, fontWeight: 700, fontSize: 32, color: tinta.tinta }}>{d.rotulo}</div>
+            <div style={{ position: 'absolute', left: x - 30, top: baseBarras + 16, width: larg + 60, textAlign: 'center', fontFamily: FONTE.texto, fontWeight: PESO.texto, fontSize: 32, color: tinta.tinta }}>{normalizarTexto(d.rotulo)}</div>
           </React.Fragment>
         );
       })}
     </>
   );
 };
+const COR_BARRA_ESCURO = '#4A4A4A';
 
 // ---------- Card final (provisório até as referências do Ale)
 export const CardFinal: React.FC<PropsElemento> = ({ inicio, tinta }) => {
   const frame = useCurrentFrame();
   if (!visivel(frame, inicio)) return null;
   const e = entrada(frame, inicio, 6);
-  const nome = '@alezudoo';
-  const corpo = Math.min(200, (AREA.largura - 40) / (larguraItalico(nome, 1) || 1));
+  const nome = '@ALEZUDOO';
+  const largura = larguraCentrada(900);
+  const corpo = Math.min(150, (largura - 20) / Math.max(0.1, larguraDisplay(nome, 1)));
   return (
-    <div style={{ position: 'absolute', left: AREA.x, top: 760, width: AREA.largura, transform: `translateY(${(1 - e) * 60}px)` }}>
-      <div style={{ fontFamily: FONTE.editorial, fontStyle: 'italic', fontSize: corpo, lineHeight: 1, color: tinta.tinta }}>{nome}</div>
-      <div style={{ display: 'inline-block', marginTop: 24, background: tinta.etiqueta, padding: '10px 18px', opacity: visivel(frame, inicio + 6) ? 1 : 0 }}>
-        <span style={{ fontFamily: FONTE.texto, fontWeight: 800, fontSize: 34, letterSpacing: 0.8, color: tinta.etiquetaTexto, textTransform: 'uppercase' }}>Segue pra mais</span>
+    <div style={{ position: 'absolute', left: EIXO - largura / 2, top: 700, width: largura, display: 'flex', flexDirection: 'column', alignItems: 'center', transform: `translateY(${(1 - e) * 60}px)` }}>
+      <div style={{ fontFamily: FONTE.display, fontWeight: PESO.display, fontSize: corpo, lineHeight: 1, color: tinta.tinta, whiteSpace: 'nowrap' }}>{nome}</div>
+      <div style={{ marginTop: 28, background: tinta.acento, padding: '12px 22px', opacity: visivel(frame, inicio + 6) ? 1 : 0, transform: 'rotate(-1.5deg)' }}>
+        <span style={{ fontFamily: FONTE.texto, fontWeight: PESO.texto, fontSize: 36, color: tinta.acentoTexto, textTransform: 'uppercase' }}>Segue pra mais</span>
       </div>
     </div>
   );

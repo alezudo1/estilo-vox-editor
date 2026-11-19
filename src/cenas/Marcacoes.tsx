@@ -10,10 +10,10 @@ export const alvoEmPixels = (alvo: string, cena: Cena) => {
   const limpo = alvo.trim().replace(/^["']|["']$/g, '');
   const idx = cena.etiquetas.findIndex((e) => e.texto.toLowerCase() === limpo.toLowerCase());
   if (idx >= 0) {
-    const { x, y } = posicaoEtiqueta(idx);
+    const { x, y } = posicaoEtiqueta(idx, cena.etiquetas[idx].texto);
     const w = larguraEtiqueta(cena.etiquetas[idx].texto);
     const cx = x + w / 2;
-    return { cx, cy: y + ETIQUETA.altura / 2, rx: Math.min(w / 2 + 34, cx - 40), ry: ETIQUETA.altura / 2 + 34 };
+    return { cx, cy: y + ETIQUETA.altura / 2, rx: w / 2 + 34, ry: ETIQUETA.altura / 2 + 34 };
   }
   const coord = limpo.match(/^(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)$/);
   if (coord) return { cx: (Number(coord[1]) / 100) * LARGURA, cy: (Number(coord[2]) / 100) * ALTURA, rx: 200, ry: 140 };
