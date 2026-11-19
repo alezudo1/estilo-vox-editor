@@ -35,7 +35,7 @@ export const Video: React.FC<PropsVideo> = ({ plano, base }) => {
         return (
           <Sequence key={cena.id} from={de} durationInFrames={dur} name={cena.id}>
             <Fundo tinta={tinta} url={url} />
-            {cena.fonte && <LinhaFonte texto={cena.fonte} tinta={tinta} />}
+            {cena.fonte && !cena.elementos.some((e) => e.tipo === 'card-final') && <LinhaFonte texto={cena.fonte} tinta={tinta} />}
             {cena.elementos.map((el, k) => {
               const C = COMPONENTES[el.tipo];
               const indice = (contagem[el.tipo] = (contagem[el.tipo] ?? -1) + 1);

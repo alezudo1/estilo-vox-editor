@@ -9,7 +9,7 @@ import { PASTA_BIBLIOTECA } from './lib/caminhos';
 import { lerEnv } from './lib/env';
 
 lerEnv();
-const MODELOS = [process.env.GEMINI_MODELO, 'gemini-3.1-flash-image-preview', 'gemini-3.1-flash-image', 'gemini-3-pro-image-preview', 'gemini-2.5-flash-image'].filter(Boolean) as string[];
+const MODELOS = [process.env.GEMINI_MODELO, 'gemini-nano-banana-2.1', 'gemini-3.1-flash-image-preview', 'gemini-3.1-flash-image', 'gemini-3-pro-image-preview', 'gemini-2.5-flash-image'].filter(Boolean) as string[];
 
 export const ESTILO = [
   'A single isolated object, photographed for an editorial collage.',

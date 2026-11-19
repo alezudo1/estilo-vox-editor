@@ -203,7 +203,7 @@ export const Foto: React.FC<PropsElemento> = ({ el, inicio, tinta, url, temFrase
   }
   if (recorte) {
     return (
-      <div style={{ position: 'absolute', left: 0, width: LARGURA, top: topo - 40, height: base - topo + 60, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      <div style={{ position: 'absolute', left: 0, width: LARGURA, top: topo + 60, height: base - topo - 50, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
         {filtroSvg}
         <Img src={recorte} style={{ height: '100%', maxWidth: '96%', objectFit: 'contain', transformOrigin: 'bottom center', transform: `translateY(${(1 - e) * 120}px) scale(${push})`, filter: `${filtro} drop-shadow(18px 20px 12px ${tinta.sombra})` }} />
       </div>
