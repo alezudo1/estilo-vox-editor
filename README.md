@@ -6,12 +6,16 @@ Ferramenta que transforma **roteiro marcado + voz + imagens** em shorts verticai
 
 ```
 D:\Estilo-Vox\
-├── editor\                  ← este repositório
+├── editor\                  ← este repositório (+ arquivo .env com a GEMINI_API_KEY, fora do GitHub)
+├── biblioteca\
+│   ├── texturas\            ← texturas do Texturelabs (não vão para o GitHub: licença proíbe repassar)
+│   └── objetos\             ← objetos recortados gerados com npm run objeto
 └── videos\
     └── 2026-11-25-7a1\      ← uma pasta por vídeo (AAAA-MM-DD-assunto)
         ├── roteiro.md       ← roteiro com marcações (ver claude/vocabulario-marcacoes.md no Projeto)
         ├── audio.wav        ← sua narração (também aceita .mp3/.m4a)
         ├── imagens\         ← fotos e documentos citados no roteiro
+        │   └── recortes\    ← pessoas recortadas (npm run recortar)
         ├── plano.json       ← gerado automaticamente
         └── render\          ← MP4 final e quadros de conferência
 ```
@@ -23,9 +27,11 @@ No PowerShell:
 ```powershell
 winget install OpenJS.NodeJS.LTS
 winget install Git.Git
+winget install Python.Python.3.12
 # feche e abra o PowerShell de novo
 cd D:\Estilo-Vox\editor
 npm install
+pip install "rembg[cpu]"
 ```
 
 ## Uso do dia a dia
@@ -55,6 +61,15 @@ npm run plano  -- ..\videos\2026-11-25-7a1              # só confere o roteiro 
 ```
 
 O render final se recusa a rodar se o semáforo tiver erros.
+
+Imagens:
+
+```powershell
+npm run objeto -- bola "bola de futebol de couro antiga"   # gera objeto recortado na biblioteca (Nano Banana)
+npm run objeto -- trofeu "taça prateada" --variantes 3      # 3 opções para escolher (trofeu-1, -2, -3)
+npm run recortar -- 2026-11-25-7a1                          # recorta as fotos marcadas com | recorte
+npm run preparar -- --tudo                                  # refaz as texturas de papel
+```
 
 Para testar sem o seu material, use a pasta de exemplo: `npm run painel` com `$env:VIDEOS_DIR="exemplos"` antes.
 

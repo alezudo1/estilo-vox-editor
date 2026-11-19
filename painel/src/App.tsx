@@ -78,7 +78,7 @@ const Previa: React.FC<{ plano: Plano; slug: string }> = ({ plano, slug }) => {
   const [tocando, setTocando] = useState(false);
   const [zona, setZona] = useState(true);
   const total = duracaoEmQuadros(plano);
-  const inputProps = useMemo(() => ({ plano, base: `/api/videos/${encodeURIComponent(slug)}/arquivos` }), [plano, slug]);
+  const inputProps = useMemo(() => ({ plano, base: '/arquivos' }), [plano]);
 
   useEffect(() => {
     const p = player.current;

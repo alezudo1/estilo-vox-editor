@@ -2,8 +2,8 @@ import React from 'react';
 import { useCurrentFrame } from 'remotion';
 import type { Cena, Sobreposicao } from '../plano/tipos';
 import { tracado, visivel } from '../movimento';
-import { ALTURA, COR, LARGURA } from '../tema';
-import { ETIQUETA_ALTURA, larguraEtiqueta, posicaoEtiqueta } from './Etiqueta';
+import { ALTURA, LARGURA } from '../tema';
+import { ETIQUETA, larguraEtiqueta, posicaoEtiqueta } from './Elementos';
 
 // Resolve o alvo: texto de uma etiqueta da cena, "centro", "rosto" ou "x,y" em %.
 export const alvoEmPixels = (alvo: string, cena: Cena) => {
@@ -13,7 +13,7 @@ export const alvoEmPixels = (alvo: string, cena: Cena) => {
     const { x, y } = posicaoEtiqueta(idx);
     const w = larguraEtiqueta(cena.etiquetas[idx].texto);
     const cx = x + w / 2;
-    return { cx, cy: y + ETIQUETA_ALTURA / 2, rx: Math.min(w / 2 + 34, cx - 40), ry: ETIQUETA_ALTURA / 2 + 34 };
+    return { cx, cy: y + ETIQUETA.altura / 2, rx: Math.min(w / 2 + 34, cx - 40), ry: ETIQUETA.altura / 2 + 34 };
   }
   const coord = limpo.match(/^(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)$/);
   if (coord) return { cx: (Number(coord[1]) / 100) * LARGURA, cy: (Number(coord[2]) / 100) * ALTURA, rx: 200, ry: 140 };
@@ -40,20 +40,20 @@ const caminhoSeta = (cx: number, cy: number, ry: number) => {
   return { corpo: `M${x0},${y0} Q${x0 + 40},${ye} ${xe},${ye}`, ponta: `M${xe - 50},${ye - 34} L${xe},${ye} L${xe - 46},${ye + 38}` };
 };
 
-export const Marcacao: React.FC<{ s: Sobreposicao; cena: Cena; inicio: number }> = ({ s, cena, inicio }) => {
+export const Marcacao: React.FC<{ s: Sobreposicao; cena: Cena; inicio: number; cor: string }> = ({ s, cena, inicio, cor }) => {
   const frame = useCurrentFrame();
   if (!visivel(frame, inicio)) return null;
   const { cx, cy, rx, ry } = alvoEmPixels(s.alvo, cena);
   const p = tracado(frame, inicio, 10);
   const filtro = (
     <defs>
-      <filter id="mao">
+      <filter id={`mao-${s.linha}`}>
         <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7" />
         <feDisplacementMap in="SourceGraphic" scale="5" />
       </filter>
     </defs>
   );
-  const traco = { fill: 'none', stroke: COR.menta, strokeWidth: 12, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, filter: 'url(#mao)' };
+  const traco = { fill: 'none', stroke: cor, strokeWidth: 12, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, filter: `url(#mao-${s.linha})` };
   if (s.tipo === 'circulo') {
     return (
       <svg width={LARGURA} height={ALTURA} style={{ position: 'absolute', inset: 0 }}>

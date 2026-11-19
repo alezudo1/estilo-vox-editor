@@ -3,8 +3,12 @@ import humaneBold from './fontes/Humane-Bold.woff2';
 import geist from './fontes/Geist-VF.woff2';
 import geistSerif from './fontes/GeistSerif-VF.woff2';
 import geistMono from './fontes/GeistMono-VF.woff2';
+import instrumentItalico from './fontes/InstrumentSerif-Italic.woff2';
+import instrumentRegular from './fontes/InstrumentSerif-Regular.woff2';
 
-const FONTES: Array<[string, string, string]> = [
+const FONTES: Array<[string, string, string, string?]> = [
+  ['InstrumentSerif', instrumentItalico, '400', 'italic'],
+  ['InstrumentSerif', instrumentRegular, '400', 'normal'],
   ['Humane', humaneBold, '700'],
   ['Geist', geist, '100 900'],
   ['GeistSerif', geistSerif, '100 900'],
@@ -19,8 +23,8 @@ export const carregarFontes = () => {
   carregado = true;
   const handle = delayRender('Carregando fontes');
   Promise.all(
-    FONTES.map(([familia, url, peso]) => {
-      const face = new FontFace(familia, `url(${url}) format('woff2')`, { weight: peso });
+    FONTES.map(([familia, url, peso, estilo]) => {
+      const face = new FontFace(familia, `url(${url}) format('woff2')`, { weight: peso, style: estilo ?? 'normal' });
       document.fonts.add(face);
       return face.load();
     }),

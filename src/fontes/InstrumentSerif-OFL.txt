@@ -1,0 +1,2 @@
+Instrument Serif — Copyright 2022 The Instrument Serif Project Authors (https://github.com/Instrument/instrument-serif)
+Licenciada sob a SIL Open Font License 1.1 (https://openfontlicense.org). Arquivos obtidos via @fontsource/instrument-serif.

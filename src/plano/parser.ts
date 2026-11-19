@@ -3,12 +3,13 @@
 
 import type { Aviso, Cena, Elemento, Palavra, Plano, Sobreposicao, Tema, TipoCena, TipoSobreposicao } from './tipos';
 
-const TIPOS_CENA: TipoCena[] = ['gancho', 'foto', 'doc', 'numero', 'grafico', 'card-final'];
+const TIPOS_CENA: TipoCena[] = ['gancho', 'foto', 'objeto', 'doc', 'numero', 'grafico', 'card-final'];
+const AJUSTES = ['fundo', 'fonte']; // marcações que mudam o estado das próximas cenas
 const TIPOS_SOBRE: TipoSobreposicao[] = ['circulo', 'seta'];
-const TODOS = [...TIPOS_CENA, ...TIPOS_SOBRE, 'continua'];
+const TODOS = [...TIPOS_CENA, ...TIPOS_SOBRE, ...AJUSTES, 'continua'];
 const FASE2 = ['recorte', 'ficha', 'placar', 'manchete', 'mapa', 'campo', 'video', 'tela-dividida', 'som'];
 const POSICIONAL: Record<string, string> = {
-  gancho: 'texto', foto: 'arquivo', doc: 'arquivo', numero: 'valor', grafico: 'tipo', circulo: 'alvo', seta: 'alvo',
+  gancho: 'texto', foto: 'arquivo', objeto: 'nome', doc: 'arquivo', fundo: 'valor', fonte: 'valor', numero: 'valor', grafico: 'tipo', circulo: 'alvo', seta: 'alvo',
 };
 const TEMAS: Tema[] = ['arquivo', 'diagrama', 'dados', 'colagem'];
 const CORES_NOMEADAS: Record<string, string> = { coral: '#FF6B57' };
@@ -40,6 +41,8 @@ export const lerParametros = (tipo: string, resto: string | undefined) => {
       params[m[1].toLowerCase()] = semAspas(m[2]);
     } else if (i === 0 && POSICIONAL[tipo]) {
       params[POSICIONAL[tipo]] = semAspas(seg);
+    } else if (/^\s*[a-zà-ú-]+\s*$/i.test(seg)) {
+      params[seg.trim().toLowerCase()] = 'sim'; // bandeira: | recorte
     } else {
       params[`extra${i}`] = semAspas(seg);
     }
@@ -98,9 +101,13 @@ export function analisarRoteiro(texto: string, ritmo = RITMO_PADRAO): Plano {
   let continua = false;
   let emDestaque = false;
   let cenaAtual: Cena | null = null;
+  let fundoAtual = meta.fundo;
+  let fonteAtual: string | undefined;
+  let emFrase = false;
+  let ultimaFoiMarcacao = false; // marcações seguidas, sem narração entre elas, formam uma cena só
 
   const novaCena = (): Cena => {
-    const c: Cena = { id: `cena-${cenas.length + 1}`, inicio: 0, fim: 0, elementos: [], sobreposicoes: [], etiquetas: [], palavras: [] };
+    const c: Cena = { id: `cena-${cenas.length + 1}`, inicio: 0, fim: 0, elementos: [], sobreposicoes: [], etiquetas: [], frases: [], palavras: [], fundo: fundoAtual, fonte: fonteAtual };
     cenas.push(c);
     return c;
   };
@@ -127,6 +134,16 @@ export function analisarRoteiro(texto: string, ritmo = RITMO_PADRAO): Plano {
       }
       const params = lerParametros(tipo, marca[2]);
 
+      if (tipo === 'fundo') {
+        if (params.valor === 'escuro' || params.valor === 'claro') fundoAtual = params.valor;
+        else avisos.push({ nivel: 'erro', linha: n, mensagem: `[fundo: ${params.valor ?? ''}] — use escuro ou claro.` });
+        continue;
+      }
+      if (tipo === 'fonte') {
+        fonteAtual = params.valor || undefined;
+        continue;
+      }
+
       if ((TIPOS_SOBRE as string[]).includes(tipo)) {
         if (!cenaAtual) {
           avisos.push({ nivel: 'erro', linha: n, mensagem: `[${tipo}] precisa de uma cena antes dela.` });
@@ -139,6 +156,8 @@ export function analisarRoteiro(texto: string, ritmo = RITMO_PADRAO): Plano {
       }
 
       // validações por tipo
+      if (tipo === 'objeto' && !params.nome) avisos.push({ nivel: 'erro', linha: n, mensagem: '[objeto] sem nome. Ex.: [objeto: bola]' });
+      if (params.fundo === 'escuro' || params.fundo === 'claro') fundoAtual = params.fundo;
       if ((tipo === 'foto' || tipo === 'doc') && !params.arquivo) avisos.push({ nivel: 'erro', linha: n, mensagem: `[${tipo}] sem nome de arquivo.` });
       if (params.arquivo) arquivos.add(params.arquivo);
       if (tipo === 'doc' && params.marcar && !params.area)
@@ -152,13 +171,14 @@ export function analisarRoteiro(texto: string, ritmo = RITMO_PADRAO): Plano {
       }
 
       const el: Elemento = { tipo: tipo as TipoCena, params, inicio: 0, linha: n };
-      if (continua && cenaAtual) {
+      if ((continua || ultimaFoiMarcacao) && cenaAtual) {
         cenaAtual.elementos.push(el);
       } else {
         cenaAtual = novaCena();
         cenaAtual.elementos.push(el);
       }
       continua = false;
+      ultimaFoiMarcacao = true;
       pendentes.push({ aplicar: (t) => (el.inicio = t) });
       continue;
     }
@@ -169,6 +189,7 @@ export function analisarRoteiro(texto: string, ritmo = RITMO_PADRAO): Plano {
     }
 
     // narração
+    ultimaFoiMarcacao = false;
     if (!cenaAtual) {
       cenaAtual = novaCena();
       cenaAtual.elementos.push({ tipo: 'texto', params: {}, inicio: tempo, linha: n });
@@ -185,7 +206,21 @@ export function analisarRoteiro(texto: string, ritmo = RITMO_PADRAO): Plano {
         pendentes.forEach((p) => p.aplicar(tempo));
         pendentes = [];
       }
-      const p: Palavra = { texto: textoPalavra, destaque: emDestaque, inicio: tempo, fim: tempo + dur };
+      // _trecho_ → frase escrita na tela
+      const abreFrase = /^["“(]*_/.test(textoPalavra);
+      const fechaFrase = /_[.,;:!?…"”)]*$/.test(textoPalavra) && (textoPalavra.replace(/[^_]/g, '').length >= (abreFrase ? 2 : 1));
+      if (abreFrase && !emFrase) {
+        emFrase = true;
+        cenaAtual.frases.push({ palavras: [], inicio: tempo });
+      }
+      const limpa = textoPalavra.replace(/_/g, '');
+      if (!limpa) continue;
+      const p: Palavra = { texto: limpa, destaque: emDestaque, inicio: tempo, fim: tempo + dur };
+      if (emFrase) {
+        const f = cenaAtual.frases[cenaAtual.frases.length - 1];
+        if (f) { f.palavras.push({ texto: limpa, inicio: tempo }); p.frase = cenaAtual.frases.length - 1; }
+      }
+      if (fechaFrase) emFrase = false;
       cenaAtual.palavras.push(p);
       tempo += dur;
       if (fecha) emDestaque = false;
@@ -193,6 +228,7 @@ export function analisarRoteiro(texto: string, ritmo = RITMO_PADRAO): Plano {
   }
 
   const fimFala = tempo;
+  if (emFrase) avisos.push({ nivel: 'alerta', mensagem: 'Um _trecho em itálico_ foi aberto e não foi fechado com _.' });
   // o gancho é o primeiro quadro do vídeo
   cenas[0]?.elementos.forEach((e) => e.tipo === 'gancho' && (e.inicio = 0));
   // marcações sem narração depois (ex.: card-final no fim)

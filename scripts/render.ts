@@ -2,10 +2,11 @@
 //   sem --quadros: renderiza o MP4 final em <pasta>/render/<slug>.mp4
 //   com --quadros: só gera PNGs desses quadros (conferência rápida)
 import { existsSync, mkdirSync } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
 import { montarPlano } from './lib/pasta';
+import { iniciarServidorArquivos } from './lib/servidor';
 
 const args = process.argv.slice(2);
 const pasta = resolve(args.find((a) => !a.startsWith('--') && !/^[\d,]+$/.test(a)) ?? '.');
@@ -24,8 +25,9 @@ if (erros.length && !quadros) {
 
 const navegador = process.env.REMOTION_CHROME ?? (existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : undefined);
 console.log('Empacotando…');
-const serveUrl = await bundle({ entryPoint: resolve(import.meta.dirname, '../src/index.ts'), publicDir: pasta });
-const inputProps = { plano, base: '' };
+const serveUrl = await bundle({ entryPoint: resolve(import.meta.dirname, '../src/index.ts') });
+const servidor = await iniciarServidorArquivos(dirname(pasta));
+const inputProps = { plano, base: servidor.base };
 const composition = await selectComposition({ serveUrl, id: 'Video', inputProps, browserExecutable: navegador });
 const saida = join(pasta, 'render');
 mkdirSync(saida, { recursive: true });
@@ -49,3 +51,4 @@ if (quadros) {
   });
   console.log(`\n${output}`);
 }
+servidor.fechar();
