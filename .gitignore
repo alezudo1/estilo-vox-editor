@@ -1,0 +1,8 @@
+node_modules/
+out/
+.remotion/
+exemplos/*/render/
+exemplos/*/plano.json
+*.log
+.env
+cookies*.txt

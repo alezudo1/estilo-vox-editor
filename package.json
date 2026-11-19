@@ -1,0 +1,32 @@
+{
+  "name": "estilo-vox-editor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "painel": "vite --config painel/vite.config.ts",
+    "studio": "remotion studio src/index.ts",
+    "render": "tsx scripts/render.ts",
+    "plano": "tsx scripts/plano.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.545",
+    "@remotion/cli": "4.0.545",
+    "@remotion/player": "4.0.545",
+    "@remotion/renderer": "4.0.545",
+    "music-metadata": "12.7.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.545"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "tsx": "4.23.15",
+    "typescript": "^5.8.0",
+    "vite": "8.3.8"
+  }
+}
